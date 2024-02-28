@@ -1,0 +1,637 @@
+---
+title: "PNAS Nexus paper"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Let's test this out
+
+```{r}
+library(tidyverse)
+library(magrittr)
+```
+
+Let's load the file
+```{r}
+myTable = read_tsv("cytokine_correlation.txt")
+head(myTable)
+```
+
+```{r}
+dim(myTable)
+```
+
+OK so we have 130/2=65 parameters to compare, which is correct.
+
+Let's split them into 2 tables, one for case and one for control
+
+```{r}
+myTable$GROUP
+myCase = myTable[which(myTable$GROUP == "CASE"),] %>% as.data.frame(.)
+myControl = myTable[which(myTable$GROUP == "CONTROL"),] %>% as.data.frame(.)
+```
+
+OK, now let's loop through the entire tables and do our correlations based on them
+
+```{r}
+myvariables = {}
+
+for (x in seq(from = 2, to = dim(myControl)[2],by=2)){
+     case_blood = myCase[,x] %>% as.data.frame(.)
+  control_blood = myControl[,x] %>% as.data.frame(.)
+      case_saliva = myCase[,(x+1)] %>% as.data.frame(.)
+   control_saliva = myControl[,(x+1)] %>% as.data.frame(.)
+   
+   spearman_case = cor.test(as.numeric(case_blood[,1]),as.numeric(case_saliva[,1]), method = c("spearman"),exact = FALSE)
+   spearman_case = spearman_case$p.value
+   spearman_control = cor.test(as.numeric(control_blood[,1]),as.numeric(control_saliva[,1]), method = c("spearman"),exact = FALSE)
+   spearman_control = spearman_control$p.value
+   
+   if (spearman_case < 0.05 || spearman_control < 0.05) {
+     myvariables = c(myvariables,x)
+   }
+}
+
+for (x in myvariables){
+currentCase = data.frame(myCase[,x],myCase[,(x+1)]) %$% cor.test(as.numeric(.[,1]),as.numeric(.[,2]), method = c("spearman"),exact = FALSE)
+currentControl = data.frame(myControl[,x],myControl[,(x+1)]) %$% cor.test(as.numeric(.[,1]),as.numeric(.[,2]), method = c("spearman"),exact = FALSE)
+print(paste0("Rho correlation in 'case' between ",
+             colnames(myCase)[x]," and ",
+             colnames(myCase)[x+1]," is ",
+             currentCase$estimate, " and the pvalue is ",currentCase$p.value))
+
+print(paste0("Rho correlation in 'control' between ",
+             colnames(myControl)[x]," and ",
+             colnames(myControl)[x+1]," is ",
+             currentControl$estimate, " and the pvalue is ",currentControl$p.value))
+}
+
+```
+Some variable clean up
+```{r}
+rm(control_blood,control_saliva,currentCase,currentControl,myvariables,spearman_case,spearman_control,x,case_blood,case_saliva,myCase,myControl)
+```
+
+
+
+Let's get the cytokines correlation
+```{r}
+ArrangedCytokine = read_tsv(file = "./Kuwait_project_blood_saliva.txt") %>% as.data.frame(.) %>% .[,which(colnames(.) %in% c("#SampleID","group2","APRIL_blood","APRIL_saliva","BAFF_blood","BAFF_saliva","BLCCXCL13_blood","BLCCXCL13_saliva","CD30_blood","CD30_saliva","CD40L_blood","CD40L_saliva","ENA78CXCL5_blood","ENA78CXCL5_saliva","Eotaxin2CCL24_blood","Eotaxin2CCL24_saliva","Eotaxin3CCL26_blood","Eotaxin3CCL26_saliva","EotaxinCCL11_blood","EotaxinCCL11_saliva","FGF2_blood","FGF2_saliva","FractalkineCX3CL1_blood","FractalkineCX3CL1_saliva","GCSFCSF3_blood","GCSFCSF3_saliva","GMCSF_blood","GMCSF_saliva","GROalphaCXCL1_blood","GROalphaCXCL1_saliva","HGF_blood","HGF_saliva","IFNalpha_blood","IFNalpha_saliva","IFNgamma_blood","IFNgamma_saliva","IL1alpha_blood","IL1alpha_saliva","IL1beta_blood","IL1beta_saliva","IL2_blood","IL2_saliva","IL2R_blood","IL2R_saliva","IL3_blood","IL3_saliva","IL4_blood","IL4_saliva","IL5_blood","IL5_saliva","IL6_blood","IL6_saliva","IL7_blood","IL7_saliva","IL8CXCL8_blood","IL8CXCL8_saliva","IL9_blood","IL9_saliva","IL10_blood","IL10_saliva","IL12p70_blood","IL12p70_saliva","IL13_blood","IL13_saliva","IL15_blood","IL15_saliva","IL16_blood","IL16_saliva","IL17ACTLA8_blood","IL17ACTLA8_saliva","IL18_blood","IL18_saliva","IL20_blood","IL20_saliva","IL21_blood","IL21_saliva","IL22_blood","IL22_saliva","IL23_blood","IL23_saliva","IL27_blood","IL27_saliva","IL31_blood","IL31_saliva","IP10CXCL10_blood","IP10CXCL10_saliva","ITACCXCL1_blood","ITACCXCL11_saliva","LIF_blood","LIF_saliva","MCP1CCL2_blood","MCP1CCL2_saliva","MCP2CCL8_blood","MCP2CCL8_saliva","MCP3CCL7_blood","MCP3CCL7_saliva","MCSF_blood","MCSF_saliva","MDC_blood","MDC_saliva","MIF_blood","MIF_saliva","MIGCXCL9_blood","MIGCXCL9_saliva","MIP1alphaCCL3_blood","MIP1alphaCCL3_saliva","MIP1betaCCL4_blood","MIP1betaCCL4_saliva","MIP3alphaCCL20_blood","MIP3alphaCCL20_saliva","MMP1_blood","MMP1_saliva","NGFbeta_blood","NGFbeta_saliva","SCF_blood","SCF_saliva","SDF1alpha_blood","SDF1alpha_saliva","TNFalpHa_blood","TNFalpha_saliva","TNFbeta_blood","TNFbeta_saliva","TNFRII_blood","TNFRII_saliva","TRAIL_blood","TRAIL_saliva","TSLP_blood","TSLP_saliva","TWEAK_blood","TWEAK_saliva","VEGFA_blood","VEGFA_saliva"))] %>% as.data.frame(.) # Each cytokine is arranged in this list. Starts with blood, then saliva
+
+bloodCytokines = ArrangedCytokine %>% .[,which(grepl("_blood", colnames(ArrangedCytokine), fixed=TRUE))] %>% cbind(ArrangedCytokine$`#SampleID`,ArrangedCytokine$group2,.)
+colnames(bloodCytokines)[1] = "SampleID"
+colnames(bloodCytokines)[2] = "group2"
+
+salivaCytokines = ArrangedCytokine %>% .[,which(grepl("_saliva", colnames(ArrangedCytokine), fixed=TRUE))] %>% cbind(ArrangedCytokine$`#SampleID`,ArrangedCytokine$group2,.)
+colnames(salivaCytokines)[1] = "SampleID"
+colnames(salivaCytokines)[2] = "group2"
+
+# Remove the designation of either blood or saliva, to make it easier to plot
+colnames(bloodCytokines) = gsub('_blood', '', colnames(bloodCytokines))
+colnames(salivaCytokines) = gsub('_saliva', '', colnames(bloodCytokines))
+
+colnames(salivaCytokines) == colnames(bloodCytokines) # TRUE, so all columns are the same and are arranged the same
+salivaCytokines$SampleID == bloodCytokines$SampleID  # TRUE, so all rows are the same and are arranged the same
+
+```
+
+Great so it is nicely arranged now. Let's create another table, and insert the pvalues of the correlations in it
+
+```{r}
+cytokineList = colnames(salivaCytokines)[3:dim(salivaCytokines)[2]]
+mySpearman = data.frame(matrix(NA, nrow = length(cytokineList), ncol = 3))
+mySpearman[,1] = cytokineList
+
+for (x in 1:dim(mySpearman)[1]){
+  currentCytokine = mySpearman[x,1]
+  bloodCytokine = bloodCytokines %>% .[,which(colnames(.) %in% currentCytokine)]
+  salivaCytokine = salivaCytokines %>% .[,which(colnames(.) %in% currentCytokine)]
+  
+  currentSpearman = cor.test(bloodCytokine,salivaCytokine,method="spearman",exact=FALSE)
+  mySpearman[x,2] = currentSpearman$estimate
+  mySpearman[x,3] = currentSpearman$p.value
+}
+
+rm(bloodCytokine,currentCytokine,x,salivaCytokine,ArrangedCytokine,myTable) ## Variable clean up
+```
+
+So we want to create a heatmap for the statistically sig cytokines in saliva. We are trying to show upregulation and downregulation. So first run a kruskall wallis (Mann Whitney) on Yes/No COVID. Those that are stat sig, per cytokine, take the values, turn them to z-scores, and put them in a heatmap.
+
+Let's see what is sig and what is not in saliva and blood
+
+```{r message=FALSE, warning=FALSE}
+
+SalivaZscoreTable = data.frame(matrix(NA, nrow = length(cytokineList), ncol = dim(salivaCytokines)[1]+1))
+rownames(SalivaZscoreTable) = cytokineList
+colnames(SalivaZscoreTable) = c(salivaCytokines$SampleID,"pvalue")
+
+salivaDunn = data.frame(matrix(NA, nrow = 0, ncol = 13))
+colnames(salivaDunn) = c(".y.","group1","group2","n1","n2","statistic","p","p.adj","p.adj.signif","y.position","groups","xmin","xmax")
+
+for (x in 1:length(cytokineList)){
+currentCytokine = salivaCytokines[,cytokineList[x]]
+categories = salivaCytokines$group2
+kstest = kruskal.test(currentCytokine,categories)
+
+#salivaDunn = rbind(salivaDunn,currentDunn)
+currentCytokine = currentCytokine+(abs(min(currentCytokine,na.rm=TRUE)) + 1) #Take all the cytokines, and add to them the absolute value of the minimum value, plus 1
+currentCytokine = log10(currentCytokine) #log10
+
+#kstest = aov(currentCytokine~categories) %>% summary(.) %>% .[[1]] %>% .$`Pr(>F)` %>% .[1]
+#kstest$p.value = kstest
+
+zscoreTable = scale(currentCytokine) #Shift all the values by min+1, then convert to z-scores. This will change all the sco
+SalivaZscoreTable[x,] = c(zscoreTable,kstest$p.value)
+
+currentDunn = rstatix::t_test(data.frame(zscoreTable,categories),
+                                 formula=zscoreTable~categories,p.adjust.method="BH") %>% 
+  rstatix::add_xy_position(x="categories")
+currentDunn$.y. = cytokineList[x]
+
+salivaDunn = rbind(salivaDunn,currentDunn)
+}
+
+# Keep only the significant ones
+#SalivaZscoreTable = SalivaZscoreTable[which(SalivaZscoreTable$pvalue < 0.05),] # now you have a table with only the signficantly different between the 3 categories, then transformed into z-scores
+
+sigSalivaCytokines = rownames(SalivaZscoreTable)
+
+
+salivaDunnSigCytokines = salivaDunn %>% .$.y. %>% unique(.)
+salivaDunnSigOnly = salivaDunn %>% .[which(.$.y. %in% salivaDunnSigCytokines),] %>% .[which(.$p.adj <0.05),]
+
+SalivaZscoreDunnSigOnly = SalivaZscoreTable %>% .[rownames(.) %in% salivaDunnSigCytokines,] %>% rownames_to_column(var = "FeatureID") %>%
+  pivot_longer(cols = -FeatureID, names_to = "SampleID", values_to = "Value") 
+
+SalivaZscoreDunnSigOnly = left_join(SalivaZscoreDunnSigOnly,salivaCytokines[,1:2])
+SalivaZscoreDunnSigOnly$SampleID = NULL
+SalivaZscoreDunnSigOnly = SalivaZscoreDunnSigOnly %>% .[-which(is.na(.$group2)),]
+
+SalivaZscoreDunnSigOnly = SalivaZscoreDunnSigOnly %>% .[which( .$FeatureID %in% c("CD40L", "IP10CXCL10") ),]
+
+
+ggplot(SalivaZscoreDunnSigOnly, aes(x = FeatureID, y = Value, fill = group2)) + geom_boxplot() + theme_bw()  #ggpubr::stat_pvalue_manual(salivaDunnSigOnly, label = "p.adj.signif", y.position = "y.position",tip.length = 0.01)
+
+
+rm(x,zscoreTable)
+```
+
+```{r}
+
+bloodZscoreTable = data.frame(matrix(NA, nrow = length(cytokineList), ncol = dim(bloodCytokines)[1]+1))
+rownames(bloodZscoreTable) = cytokineList
+colnames(bloodZscoreTable) = c(bloodCytokines$SampleID,"pvalue")
+
+for (x in 1:length(cytokineList)){
+currentCytokine = bloodCytokines[,cytokineList[x]]
+categories = bloodCytokines$group2
+kstest = kruskal.test(currentCytokine,categories)
+currentCytokine = currentCytokine+(abs(min(currentCytokine,na.rm=TRUE)) + 1) #Take all the cytokines, and add to them the absolute value of the minimum value, plus 1
+currentCytokine = log10(currentCytokine) #log10
+zscoreTable = scale(currentCytokine) #convert to z-scores
+bloodZscoreTable[x,] = c(zscoreTable,kstest$p.value)
+}
+
+# Keep only the significant ones
+#bloodZscoreTable = bloodZscoreTable[which(bloodZscoreTable$pvalue < 0.05),] # now you have a table with only the signficantly different between the 3 categories, then transformed into z-scores
+
+sigBloodCytokines = rownames(bloodZscoreTable)
+
+BloodZscoreForPlotting = bloodZscoreTable %>% .[rownames(.) %in% c("CD40L", "IP10CXCL10"),] %>% rownames_to_column(var = "FeatureID") %>%
+  pivot_longer(cols = -FeatureID, names_to = "SampleID", values_to = "Value") 
+
+BloodZscoreForPlotting = BloodZscoreForPlotting %>% .[-which(.$SampleID %in% "pvalue"),]
+
+BloodZscoreForPlotting = left_join(BloodZscoreForPlotting,bloodCytokines[,1:2])
+BloodZscoreForPlotting$SampleID = NULL
+BloodZscoreForPlotting = BloodZscoreForPlotting[-60,]
+
+ggplot(BloodZscoreForPlotting, aes(x = FeatureID, y = Value, fill = group2)) + geom_boxplot() + theme_bw() 
+
+rm(x,kstest)
+```
+
+Let's draw heatmaps
+
+
+
+Let's work on the graphing now. Will need a complex heatmap. The generated heatmap in this notebook is based off the tutorial by: https://github.com/kevinblighe/E-MTAB-6141
+
+```{r}
+ if (!requireNamespace('ComplexHeatmap', quietly = TRUE))
+    BiocManager::install('ComplexHeatmap')
+library('ComplexHeatmap')
+```
+
+Let's start with saliva
+
+```{r}
+# Need to format 2 objects. One for the scores, where the samplesa re in colums and the cytokines in rows
+mat = SalivaZscoreTable
+mat$pvalue = NULL
+
+# Other object is the one with the metadata. Sample IDs in rows, and categories as columns
+metadata = salivaCytokines
+rownames(metadata) = salivaCytokines$SampleID
+metadata$SampleID = NULL
+```
+
+Preparation for the heatmap
+```{r}
+# Create the colors, and their breaks
+myCol = colorRampPalette(c('dodgerblue', 'black', 'yellow'))(100) 
+myBreaks = seq(-3, 3, length.out = 100)
+
+#Let's create the legend annotation
+ann = data.frame(
+    Severity = metadata$group2,
+    stringsAsFactors = FALSE)
+
+colours = list(
+    severity = c('Control' = 'pink', 'mild_moderate' = 'pink4', 'Severe' = 'red'))
+```
+
+Let's see if there is a way to do hierarchical clustering and then join them all together
+```{r}
+healthy = metadata[which(metadata$group2 == "Control"),] %>% rownames(.)
+healthy2 = mat %>% t(.) %>% as.data.frame(.) %>% .[which(rownames(.) %in% healthy),]
+healthy$group2 = NULL
+healthy = dist(healthy2) %>% hclust(.) %>% .$labels
+
+mild_moderate = metadata[which(metadata$group2 == "mild_moderate"),]
+mild_moderate$group2 = NULL
+mild_moderate = dist(mild_moderate) %>% hclust(.) %>% .$labels
+
+severe = metadata[which(metadata$group2 == "Severe"),]
+severe$group2 = NULL
+severe = dist(severe) %>% hclust(.) %>% .$labels
+```
+
+
+```{r}
+severity = metadata$group2 %>% as.data.frame(.)
+colnames(severity) = "severity"
+severity$severity = factor(severity$severity,
+    levels = c('Control', 'mild_moderate', 'Severe'))
+rownames(severity) = rownames(metadata)
+
+colAnn = HeatmapAnnotation(
+    df = severity,
+    which = 'col', # 'col' (samples) or 'row' (gene) annotation?
+    na_col = 'white', # default colour for any NA values in the annotation data-frame, 'ann'
+    col = colours,
+    annotation_height = 0.6,
+    annotation_width = unit(1, 'cm'),
+    gap = unit(1, 'mm'),
+    annotation_legend_param = list(
+      severity = list(
+        nrow = 4, # number of rows across which the legend will be arranged
+        title = 'Severity',
+        title_position = 'topleft',
+        legend_direction = 'horizontal',
+        title_gp = gpar(fontsize = 8, fontface = 'bold'),
+        labels_gp = gpar(fontsize = 8, fontface = 'bold'))))
+
+
+hmap = Heatmap(as.matrix(mat),
+               name = "Cytokine\nz-score",
+               col=circlize::colorRamp2(myBreaks,myCol),
+               heatmap_legend_param = list(
+                  color_bar = 'continuous',
+                  legend_direction = 'vertical',
+                  legend_width = unit(8, 'cm'),
+                  legend_height = unit(5.0, 'cm'),
+                  title_position = 'topcenter',
+                  title_gp=gpar(fontsize = 8, fontface = 'bold'),
+                  labels_gp=gpar(fontsize = 8, fontface = 'bold')),
+                  
+               show_column_names = FALSE,
+               cluster_columns = FALSE,
+               cluster_column_slices = TRUE,
+               show_column_dend = FALSE,
+               column_order = c(healthy,mild_moderate,severe),
+               
+               
+              top_annotation = colAnn
+               
+               )
+salivaryHeatMap = draw(hmap, column_title = "Salivary cytokines")
+salivaryHeatMap
+```
+
+
+```{r}
+rm(ann,categories,colAnn,colours,currentCytokine,healthy,hmap,mat,mild_moderate,myBreaks,myCol,SalivaZscoreTable,severe,severity,zscoreTable)
+```
+
+Let's do the blood one now.
+
+
+```{r}
+# Need to format 2 objects. One for the scores, where the samplesa re in colums and the cytokines in rows
+mat = bloodZscoreTable
+mat$pvalue = NULL
+
+# Other object is the one with the metadata. Sample IDs in rows, and categories as columns
+metadata = bloodCytokines
+rownames(metadata) = bloodCytokines$SampleID
+metadata$SampleID = NULL
+```
+
+Preparation for the heatmap
+```{r}
+# Create the colors, and their breaks
+myCol = colorRampPalette(c('dodgerblue', 'black', 'yellow'))(100) 
+myBreaks = seq(-3, 3, length.out = 100)
+
+#Let's create the legend annotation
+ann = data.frame(
+    severity = metadata$group2,
+    stringsAsFactors = FALSE)
+
+colours = list(
+    severity = c('Control' = 'pink', 'mild_moderate' = 'pink4', 'Severe' = 'red'))
+```
+
+Let's see if there is a way to do hierarchical clustering and then join them all together
+```{r}
+healthy = metadata[which(metadata$group2 == "Control"),]
+healthy$group2 = NULL
+healthy = dist(healthy) %>% hclust(.) %>% .$labels
+
+mild_moderate = metadata[which(metadata$group2 == "mild_moderate"),]
+mild_moderate$group2 = NULL
+mild_moderate = dist(mild_moderate) %>% hclust(.) %>% .$labels
+
+severe = metadata[which(metadata$group2 == "Severe"),]
+severe$group2 = NULL
+severe = dist(severe) %>% hclust(.) %>% .$labels
+```
+
+
+```{r}
+severity = metadata$group2 %>% as.data.frame(.)
+colnames(severity) = "severity"
+severity$severity = factor(severity$severity,
+    levels = c('Control', 'mild_moderate', 'Severe'))
+rownames(severity) = rownames(metadata)
+
+colAnn = HeatmapAnnotation(
+    df = severity,
+    which = 'col', # 'col' (samples) or 'row' (gene) annotation?
+    na_col = 'white', # default colour for any NA values in the annotation data-frame, 'ann'
+    col = colours,
+    annotation_height = 0.6,
+    annotation_width = unit(1, 'cm'),
+    gap = unit(1, 'mm'),
+    annotation_legend_param = list(
+      severity = list(
+        nrow = 4, # number of rows across which the legend will be arranged
+        title = 'Severity',
+        title_position = 'topleft',
+        legend_direction = 'vertical',
+        title_gp = gpar(fontsize = 8, fontface = 'bold'),
+        labels_gp = gpar(fontsize = 8, fontface = 'bold'))))
+
+
+hmap = Heatmap(as.matrix(mat),
+               name = "Cytokine\nz-score",
+               col=circlize::colorRamp2(myBreaks,myCol),
+               heatmap_legend_param = list(
+                  color_bar = 'continuous',
+                  legend_direction = 'vertical',
+                  legend_width = unit(8, 'cm'),
+                  legend_height = unit(5.0, 'cm'),
+                  title_position = 'topcenter',
+                  title_gp=gpar(fontsize = 8, fontface = 'bold'),
+                  labels_gp=gpar(fontsize = 8, fontface = 'bold')),
+                  
+               show_column_names = FALSE,
+               cluster_columns = FALSE,
+               cluster_column_slices = TRUE,
+               show_column_dend = FALSE,
+               column_order = c(healthy,mild_moderate,severe),
+               
+               
+              top_annotation = colAnn
+               
+               )
+draw(hmap, column_title = "Blood cytokines")
+```
+```{r}
+rm(severe,myCol,myBreaks,mild_moderate,metadata,mat,healthy,severity,ann,bloodZscoreTable,colAnn,colours,hmap)
+```
+
+```{r}
+
+# Let's start by filtering out sig salivary cytokines to only those that are sig
+sigSalivaCytokines2 = salivaCytokines %>% .[,which(colnames(.) %in% c("group2",sigSalivaCytokines))] %>% pivot_longer(.,cols = !group2,names_to = "Names",values_to = "Value")
+sigBloodCytokines2  = bloodCytokines %>% .[,which(colnames(.) %in% c("group2",sigBloodCytokines))] %>% pivot_longer(.,cols = !group2,names_to = "Names",values_to = "Value")
+```
+
+Lets start with saliva
+```{r}
+log10List = data.frame(matrix(NA, nrow = 0, ncol = 5))
+colnames(log10List) = c("group2","Names","Value","Value2","Value3")
+
+for (x in (sigSalivaCytokines2$Names %>% unique(.))){
+currentList = sigSalivaCytokines2 %>% .[.$Names == x,]
+theValues = currentList$Value
+theminimum = min(theValues) %>% abs(.)+1
+currentList$Value2 = theValues+theminimum
+currentList$Value3 = log10(currentList$Value2)
+log10List = rbind(log10List,currentList)
+}
+
+p2 = ggplot(log10List, aes(x=Names, y=Value3, fill=group2)) + 
+    geom_boxplot() +
+    facet_wrap(~Names, scale="free") + theme_minimal()
+p2
+```
+
+Lets do blood
+```{r}
+log10List = data.frame(matrix(NA, nrow = 0, ncol = 5))
+colnames(log10List) = c("group2","Names","Value","Value2","Value3")
+
+for (x in (sigBloodCytokines2$Names %>% unique(.))){
+currentList = sigBloodCytokines2 %>% .[.$Names == x,]
+theValues = currentList$Value
+theminimum = min(theValues,na.rm=TRUE) %>% abs(.)+1
+currentList$Value2 = theValues+theminimum
+currentList$Value3 = log10(currentList$Value2)
+log10List = rbind(log10List,currentList)
+}
+
+colnames(log10List)[2] = "Cytokines"
+
+library(rstatix)
+stat.test = log10List %>%
+  group_by(Cytokines) %>%
+  wilcox_test(Value3 ~ group2) %>%
+  adjust_pvalue(method = "fdr") %>%
+  add_significance("p.adj") %>% add_xy_position(fun = "median", x = "Cytokines")
+
+p2 = ggplot(log10List, aes(x=Cytokines, y=Value3, fill=group2)) + geom_boxplot() + facet_wrap(~Cytokines, scale="free") + theme_minimal() + ggpubr::stat_pvalue_manual(stat.test, label = "p.adj.signif",hide.ns = TRUE)
+p2
+```
+
+Next, let's do correlograms
+
+variable clean up
+```{r}
+rm(list=ls())
+```
+
+
+```{r}
+library("corrplot")
+library("tidyverse")
+library("RColorBrewer")
+```
+
+Graphing
+
+```{r}
+cytokines = read_tsv("./Kuwait_project_for_correlation 2.txt",show_col_types = FALSE) %>% as.data.frame(.)
+rownames(cytokines) = cytokines$`#SampleID`
+cytokines$`#SampleID` = NULL
+
+bloodCytokines = c("group2","covid_nocovid","APRIL_blood","BAFF_blood","BLCCXCL13_blood","CD30_blood","CD40L_blood","ENA78CXCL5_blood","Eotaxin2CCL24_blood","Eotaxin3CCL26_blood","EotaxinCCL11_blood","FGF2_blood","FractalkineCX3CL1_blood","GCSFCSF3_blood","GMCSF_blood","GROalphaCXCL1_blood","HGF_blood","IFNalpha_blood","IFNgamma_blood","IL10_blood","IL12p70_blood","IL13_blood","IL15_blood","IL16_blood","IL17ACTLA8_blood","IL18_blood","IL1alpha_blood","IL1beta_blood","IL2_blood","IL20_blood","IL21_blood","IL22_blood","IL23_blood","IL27_blood","IL2R_blood","IL3_blood","IL31_blood","IL4_blood","IL5_blood","IL6_blood","IL7_blood","IL8CXCL8_blood","IL9_blood","IP10CXCL10_blood","ITACCXCL11_blood","LIF_blood","MCP1CCL2_blood","MCP2CCL8_blood","MCP3CCL7_blood","MCSF_blood","MDC_blood","MIF_blood","MIGCXCL9_blood","MIP1alphaCCL3_blood","MIP1betaCCL4_blood","MIP3alphaCCL20_blood","MMP1_blood","NGFbeta_blood","SCF_blood","SDF1alpha_blood","TNFalpha_blood","TNFbeta_blood","TNFRII_blood","TRAIL_blood","TSLP_blood","TWEAK_blood","VEGFA_blood")
+bloodCytokines = cytokines[,which(colnames(cytokines) %in% bloodCytokines)]
+
+
+salivaCytokines = c("group2","covid_nocovid","APRIL_salivary","BAFF_salivary","BLCCXCL13_salivary","CD30_salivary","CD40L_salivary","ENA78CXCL5_salivary","Eotaxin2CCL24_salivary","Eotaxin3CCL26_salivary","EotaxinCCL11_salivary","FGF2_salivary","FractalkineCX3CL1_salivary","GCSFCSF3_salivary","GMCSF_salivary","GROalphaCXCL1_salivary","HGF_salivary","IFNalpha_salivary","IFNgamma_salivary","IL10_salivary","IL12p70_salivary","IL13_salivary","IL15_salivary","IL16_salivary","IL17ACTLA8_salivary","IL18_salivary","IL1alpha_salivary","IL1beta_salivary","IL2_salivary","IL20_salivary","IL21_salivary","IL22_salivary","IL23_salivary","IL27_salivary","IL2R_salivary","IL3_salivary","IL31_salivary","IL4_salivary","IL5_salivary","IL6_salivary","IL7_salivary","IL8CXCL8_salivary","IL9_salivary","IP10CXCL10_salivary","ITACCXCL11_salivary","LIF_salivary","MCP1CCL2_salivary","MCP2CCL8_salivary","MCP3CCL7_salivary","MCSF_salivary","MDC_salivary","MIF_salivary","MIGCXCL9_salivary","MIP1alphaCCL3_salivary","MIP1betaCCL4_salivary","MIP3alphaCCL20_salivary","MMP1_salivary","NGFbeta_salivary","SCF_salivary","SDF1alpha_salivary","TNFalpha_salivary","TNFbeta_salivary","TNFRII_salivary","TRAIL_salivary","TSLP_salivary","TWEAK_salivary","VEGFA_salivary")
+salivaCytokines = cytokines[,which(colnames(cytokines) %in% salivaCytokines)]
+
+cytokines = c("APRIL","BAFF","BLCCXCL13","CD30","CD40L","ENA78CXCL5","Eotaxin2CCL24","Eotaxin3CCL26","EotaxinCCL11","FGF2","FractalkineCX3CL1","GCSFCSF3","GMCSF","GROalphaCXCL1","HGF","IFNalpha","IFNgamma","IL10","IL12p70","IL13","IL15","IL16","IL17ACTLA8","IL18","IL1alpha","IL1beta","IL2","IL20","IL21","IL22","IL23","IL27","IL2R","IL3","IL31","IL4","IL5","IL6","IL7","IL8CXCL8","IL9","IP10CXCL10","ITACCXCL11","LIF","MCP1CCL2","MCP2CCL8","MCP3CCL7","MCSF","MDC","MIF","MIGCXCL9","MIP1alphaCCL3","MIP1betaCCL4","MIP3alphaCCL20","MMP1","NGFbeta","SCF","SDF1alpha","TNFalpha","TNFbeta","TNFRII","TRAIL","TSLP","TWEAK","VEGFA")
+```
+
+Let's create our correlation matrix
+
+```{r}
+correlationMatrix = matrix(nrow=65,ncol=65) %>% as.data.frame(.)
+colnames(correlationMatrix) = cytokines
+rownames(correlationMatrix) = cytokines
+
+pvalueMatrix = correlationMatrix
+
+
+
+# the columns are the saliva, rows are blood
+```
+
+```{r}
+correlograph = function(bloodCytokines,salivaCytokines,mytitle){
+
+for (currentBloodCytokine  in 1:65){
+for (currentSalivaCytokine in 1:65){
+  
+currentBloodCytokineNums  = bloodCytokines[,currentBloodCytokine]
+currentSalivaCytokineNums = salivaCytokines[,currentSalivaCytokine]
+
+currentCorr = cor.test(currentBloodCytokineNums,currentSalivaCytokineNums,method="spearman",exact=FALSE)
+
+correlationMatrix[currentBloodCytokine,    currentSalivaCytokine]     = currentCorr$estimate
+     pvalueMatrix[currentBloodCytokine,    currentSalivaCytokine]     = currentCorr$p.value
+  
+}}
+correlationGraph = corrplot(as.matrix(correlationMatrix),method="color",p.mat=as.matrix(pvalueMatrix),order="alphabet",sig.level = 0.05, insig="pch",pch.cex=.1,tl.col="black",tl.cex=0.5,title=mytitle)
+  return(correlationGraph)}
+
+correlographSigOnly = function(bloodCytokines,salivaCytokines,mytitle){
+
+for (currentBloodCytokine  in 1:65){
+for (currentSalivaCytokine in 1:65){
+  
+currentBloodCytokineNums  = bloodCytokines[,currentBloodCytokine]
+currentSalivaCytokineNums = salivaCytokines[,currentSalivaCytokine]
+
+currentCorr = cor.test(currentBloodCytokineNums,currentSalivaCytokineNums,method="spearman",exact=FALSE)
+
+correlationMatrix[currentBloodCytokine,    currentSalivaCytokine]     = currentCorr$estimate
+     pvalueMatrix[currentBloodCytokine,    currentSalivaCytokine]     = currentCorr$p.value
+  
+}}
+correlationGraph = corrplot(as.matrix(correlationMatrix),method="color",p.mat=as.matrix(pvalueMatrix),order="alphabet",sig.level = 0.05, insig="blank",pch.cex=.1,tl.col="black",tl.cex=0.5,title=mytitle)
+  return(correlationGraph)}
+```
+
+Let's graph COVID/No COVID
+
+```{r}
+COVIDbloodCytokines  = bloodCytokines  %>% .[which(.$covid_nocovid == "COVID"),]
+COVIDbloodCytokines$group2 = NULL
+COVIDbloodCytokines$covid_nocovid = NULL
+
+COVIDsalivaCytokines = salivaCytokines %>% .[which(.$covid_nocovid == "COVID"),]
+COVIDsalivaCytokines$group2 = NULL
+COVIDsalivaCytokines$covid_nocovid = NULL
+
+noCOVIDbloodCytokines  = bloodCytokines  %>% .[which(.$covid_nocovid == "NoCOVID"),]
+noCOVIDbloodCytokines$group2 = NULL
+noCOVIDbloodCytokines$covid_nocovid = NULL
+
+noCOVIDsalivaCytokines = salivaCytokines %>% .[which(.$covid_nocovid == "NoCOVID"),]
+noCOVIDsalivaCytokines$group2 = NULL
+noCOVIDsalivaCytokines$covid_nocovid = NULL
+```
+
+```{r echo=TRUE, message=FALSE}
+correlograph(noCOVIDbloodCytokines,noCOVIDsalivaCytokines,"Controls")
+```
+
+```{r}
+correlograph(COVIDbloodCytokines,COVIDsalivaCytokines,"COVID")
+```
+
+```{r}
+correlographSigOnly(noCOVIDbloodCytokines,noCOVIDsalivaCytokines,"Controls")
+```
+
+```{r}
+correlographSigOnly(COVIDbloodCytokines,COVIDsalivaCytokines,"COVID")
+```
+
+Let's graph COVID/No COVID
+
+```{r}
+MMbloodCytokines  = bloodCytokines  %>% .[which(.$group2 == "mild_moderate"),]
+MMbloodCytokines$group2 = NULL
+MMbloodCytokines$covid_nocovid = NULL
+
+MMsalivaCytokines = salivaCytokines %>% .[which(.$group2 == "mild_moderate"),]
+MMsalivaCytokines$group2 = NULL
+MMsalivaCytokines$covid_nocovid = NULL
+
+severebloodCytokines  = bloodCytokines  %>% .[which(.$group2 == "Severe"),]
+severebloodCytokines$group2 = NULL
+severebloodCytokines$covid_nocovid = NULL
+
+severesalivaCytokines = salivaCytokines %>% .[which(.$group2 == "Severe"),]
+severesalivaCytokines$group2 = NULL
+severesalivaCytokines$covid_nocovid = NULL
+```
+
+
+```{r}
+correlograph(MMbloodCytokines,MMsalivaCytokines,"Mild/moderate symptoms")
+```
+
+```{r}
+correlograph(severebloodCytokines,severesalivaCytokines,"Severe symptoms")
+```
+
+```{r}
+correlographSigOnly(MMbloodCytokines,MMsalivaCytokines,"Mild/moderate symptoms")
+```
+
+```{r}
+correlographSigOnly(severebloodCytokines,severesalivaCytokines,"Severe symptoms")
+```
+
+```{r}
+correlographSigOnly(noCOVIDbloodCytokines,noCOVIDsalivaCytokines,"No COVID")
+```
